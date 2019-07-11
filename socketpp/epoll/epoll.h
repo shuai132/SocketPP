@@ -16,7 +16,7 @@ extern "C" {
  * @param port
  * @return
  */
-int ep_start_loop(const char *port);
+int ep_start_loop(const char *port, void *userdata);
 
 void ep_end_loop(void);
 

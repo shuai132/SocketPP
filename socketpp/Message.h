@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 #include <cassert>
 
 #include "RawMsg.h"

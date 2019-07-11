@@ -5,21 +5,13 @@
 #include <algorithm>
 
 #include "SocketPP.h"
-#include "log.h"
 #include "TCPStream.h"
 #include "epoll.h"
+#include "log.h"
 
 SocketPP::SocketPP(int port)
-        : _port(port) {
+        : ISocket(port) {
     startSendThread();
-}
-
-int SocketPP::loop() {
-    return ep_start_loop(std::to_string(_port).c_str());
-}
-
-int SocketPP::getPort() {
-    return this->_port;
 }
 
 ssize_t SocketPP::send(Message &message, bool destroyOnSend) {

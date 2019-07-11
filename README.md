@@ -8,6 +8,7 @@ a lightweight C++ TCP socket library powered by epoll on Linux platform.
 * High performance and high concurrenc benefit from epoll
 * Support send queue with thread safe
 * Automatic memory management
+* Multi-instance support
 
 ## Requirements:
 * C++11

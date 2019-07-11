@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstring>
+#include <cstddef>
 #include <string>
 
 #include "type.h"

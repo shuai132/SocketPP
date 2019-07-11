@@ -31,10 +31,6 @@ public:
 public:
     explicit SocketPP(int port = 6000);
 
-    int loop();
-
-    int getPort();
-
     /**
      * send message immediately with thread safe
      * @param message
@@ -81,8 +77,6 @@ private:
     void onSend(TCPStream stream, const Message &message);
 
 private:
-    int _port;
-
     bool _inited = false;
 
     std::vector<TCPStream> _connectedStreams;

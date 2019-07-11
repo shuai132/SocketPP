@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "type.h"
 
 class ISocket;
-void socket_set_delegate(ISocket *socket);
-void socket_del_delegate();
+int socket_start_loop(ISocket *socket, int port);
+void socket_on_destroy(ISocket *socket);
 
 class ISocket {
 public:
@@ -18,10 +20,23 @@ public:
     virtual void onDisconnected(int fd) = 0;
     virtual void onClose() = 0;
 
-    ISocket() {
-        socket_set_delegate(this);
+public:
+    explicit ISocket(int port)
+        : _port(port) {
     }
+
     virtual ~ISocket() {
-        socket_del_delegate();
+        socket_on_destroy(this);
     }
+
+    int getPort() {
+        return _port;
+    }
+
+    int loop() {
+        return socket_start_loop(this, _port);
+    }
+
+private:
+    int _port;
 };
