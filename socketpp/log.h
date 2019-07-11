@@ -4,6 +4,8 @@
 // 方便打印日志 为了输出顺序一致 错误也使用stdout而不用stderr 使用ERROR前缀
 //
 
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 

@@ -10,7 +10,7 @@
 #include "log.h"
 
 SocketPP::SocketPP(int port)
-        : ISocket(port) {
+        : Socket(port) {
     startSendThread();
 }
 
@@ -131,17 +131,9 @@ void SocketPP::onSend(TCPStream stream, const Message &message) {
         _sendHandle(message);
 }
 
-void SocketPP::onReceive(const Message &message) {
-    if (_recvHandle)
-        _recvHandle(message);
-}
-
-void SocketPP::onStart() {
+void SocketPP::onStart(int efd) {
+    Socket::onStart(efd);
     _inited = true;
-}
-
-void SocketPP::onReceive(int fd, const byte *buf, size_t len) {
-    SocketPP::onReceive(Message::create(fd, buf, len));
 }
 
 void SocketPP::onConnected(int fd) {
@@ -175,6 +167,11 @@ void SocketPP::onDisconnected(int fd) {
         _discHandle(fd);
 }
 
-void SocketPP::onClose() {
-    // todo:
+void SocketPP::onReceive(const Message &message) {
+    if (_recvHandle)
+        _recvHandle(message);
+}
+
+void SocketPP::onReceive(int fd, const byte *buf, size_t len) {
+    SocketPP::onReceive(Message::create(fd, buf, len));
 }

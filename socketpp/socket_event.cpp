@@ -1,0 +1,49 @@
+//
+// Created by liushuai on 19-7-11.
+//
+
+#include "socket_event.h"
+#include "Socket.h"
+#include "log.h"
+
+void sk_on_global_error() {
+    LOGE("sk_on_global_error");
+}
+
+void sk_on_error(int efd) {
+    LOGE("sk_on_error:efd=%d", efd);
+}
+
+void sk_on_start(int efd, void *userdata) {
+    auto socket = static_cast<Socket *>(userdata);
+    socket->onStart(efd);
+}
+
+/**
+ * after connected
+ * @param efd
+ * @param fd
+ */
+void sk_on_connected(int efd, int fd) {
+    LOGD("sk_on_connected:efd=%d, fd=%d", efd, fd);
+    Socket::getSocket(efd)->onConnected(fd);
+}
+
+/**
+ * after fd closed by os
+ * @param efd
+ * @param fd
+ */
+void sk_on_disconnected(int efd, int fd) {
+    LOGD("sk_on_disconnected:efd=%d, fd=%d", efd, fd);
+    Socket::getSocket(efd)->onDisconnected(fd);
+}
+
+void sk_on_read_data(int efd, int fd, byte *buf, int cnt) {
+    LOGD("sk_on_read_data:efd=%d, fd=%d, cnt=%d", efd, fd, cnt);
+    Socket::getSocket(efd)->onReceive(fd, buf, cnt);
+}
+
+void sk_on_read_error(int efd, int fd) {
+    LOGE("sk_on_read_error:efd=%d, fd=%d", efd, fd);
+}

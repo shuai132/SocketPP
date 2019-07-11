@@ -12,10 +12,10 @@
 #include <condition_variable>
 #include <functional>
 
-#include "ISocket.h"
+#include "Socket.h"
 #include "Message.h"
 
-class SocketPP : public ISocket {
+class SocketPP : public Socket {
 public:
     typedef std::function<bool(Message message)> MessageInterceptor;
     typedef std::function<void(Message message)> MessageHandle;
@@ -65,11 +65,10 @@ public:
     void onReceive(const Message &message);
 
 public:
-    virtual void onStart() override;
-    virtual void onReceive(int fd, const byte *buf, size_t len) override;
+    virtual void onStart(int efd) override;
     virtual void onConnected(int fd) override;
     virtual void onDisconnected(int fd) override;
-    virtual void onClose() override;
+    virtual void onReceive(int fd, const byte *buf, size_t len) override;
 
 private:
     void startSendThread();

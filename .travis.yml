@@ -1,7 +1,16 @@
 language: cpp
-dist: xenial
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+
+    - os: osx
+      osx_image: xcode10.1
+
 compiler:
-  - clang
   - gcc
+  - clang
+
 script:
   - mkdir build && cd build && cmake .. && make

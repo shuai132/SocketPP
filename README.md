@@ -2,13 +2,14 @@
 
 [![Build Status](https://www.travis-ci.org/shuai132/SocketPP.svg?branch=master)](https://www.travis-ci.org/shuai132/SocketPP)
 
-a lightweight C++ TCP socket library powered by epoll on Linux platform.
+a lightweight C++ TCP socket library, powered by epoll on Linux platform and kqueue on macOS/Unix.
 
 ## Features:
-* High performance and high concurrenc benefit from epoll
+* High performance and high concurrenc benefit from epoll/kqueue
 * Support send queue with thread safe
 * Automatic memory management
 * Multi-instance support
+* Multiplatform support, Linux/macOS and most Unix-like OS.
 
 ## Requirements:
 * C++11

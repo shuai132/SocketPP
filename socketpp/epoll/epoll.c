@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include "epoll.h"
-#include "epoll_event.h"
+#include "socket_event.h"
 #include "log.h"
 
 
@@ -37,21 +37,21 @@ static int create_and_bind(const char *port) {
     res = getaddrinfo(NULL, port, &hint, &result);
     if (res == -1) {
         LOGE("can not get socket descriptor!");
-        ep_on_global_error();
+        sk_on_global_error();
         return -1;
     }
 
     sfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (sfd == -1) {
         LOGE("can not get socket descriptor!");
-        ep_on_global_error();
+        sk_on_global_error();
         return -1;
     }
 
     res = bind(sfd, result->ai_addr, result->ai_addrlen);
     if (res == -1) {
         LOGE("bind error!");
-        ep_on_global_error();
+        sk_on_global_error();
         return -1;
     }
 
@@ -68,7 +68,7 @@ static int make_socket_non_binding(int sfd)
     flags = fcntl(sfd, F_GETFL);
     if (flags == -1) {
         LOGE("cannot get socket flags!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
@@ -76,7 +76,7 @@ static int make_socket_non_binding(int sfd)
     res = fcntl(sfd, F_SETFL, flags);
     if (res == -1) {
         LOGE("cannot set socket flags!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
@@ -93,28 +93,28 @@ int ep_start_loop(const char *port, void *userdata)
     sfd = create_and_bind(port);
     if (sfd == -1) {
         LOGE("cannot create socket!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
     res = make_socket_non_binding(sfd);
     if (res == -1) {
         LOGE("connot set flags!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
     res = listen(sfd, SOMAXCONN);
     if (res == -1) {
         LOGE("cannot listen!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
     epoll = epoll_create(1);
     if (epoll == -1) {
         LOGE("cannot create epoll!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
@@ -123,12 +123,12 @@ int ep_start_loop(const char *port, void *userdata)
     res = epoll_ctl(epoll, EPOLL_CTL_ADD, sfd, &event);
     if (res == -1) {
         LOGE("can not add event to epoll!");
-        ep_on_global_error();;
+        sk_on_global_error();;
         return -1;
     }
 
+    sk_on_start(epoll, userdata);
     while (1) {
-        ep_on_start(epoll, userdata);
         cnt = epoll_wait(epoll, events, MAX_EVENTS, -1);
         for (i = 0; i < cnt; i++) {
             if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || !(events[i].events & EPOLLIN)) {
@@ -154,7 +154,7 @@ int ep_start_loop(const char *port, void *userdata)
                     res = make_socket_non_binding(sd);
                     if (res == -1) {
                         LOGE("cannot set flags!");
-                        ep_on_error(epoll);
+                        sk_on_error(epoll);
                         return -1;
                     }
 
@@ -163,11 +163,11 @@ int ep_start_loop(const char *port, void *userdata)
                     res = epoll_ctl(epoll, EPOLL_CTL_ADD, sd, &event);
                     if (res == -1) {
                         LOGE("cannot add to epoll!");
-                        ep_on_error(epoll);
+                        sk_on_error(epoll);
                         return -1;
                     }
 
-                    ep_on_connected(epoll, sd);
+                    sk_on_connected(epoll, sd);
                 }
             } else {
                 ssize_t cnt;
@@ -181,15 +181,15 @@ int ep_start_loop(const char *port, void *userdata)
                             break;
                         }
 
-                        ep_on_read_error(epoll, fd);
+                        sk_on_read_error(epoll, fd);
 
                     } else if (cnt == 0) {
                         close(events[i].data.fd);
-                        ep_on_disconnected(epoll, fd);
+                        sk_on_disconnected(epoll, fd);
                         break;
                     }
 
-                    ep_on_read_data(epoll, fd, buf, cnt);
+                    sk_on_read_data(epoll, fd, buf, cnt);
                 }
             }
         }
@@ -197,16 +197,4 @@ int ep_start_loop(const char *port, void *userdata)
 
     close(epoll);
     return 0;
-}
-
-void ep_end_loop(void) {
-    // todo: close epoll
-}
-
-ssize_t ep_write_data(int fd, const byte *buf, size_t len) {
-    return write(fd, buf, len);
-}
-
-void ep_close_fd(int fd) {
-    close(fd);
 }
