@@ -26,10 +26,10 @@ mkdir build && cd build && cmake .. && make
 
 int main() {
     const int port = 6000;
-    SocketPP socket(port);
-    socket.setRecvHandle([&] (const Message &message) {
-        socket.send(message);
+    SocketPP::TCPServer server(port);
+    server.setRecvHandle([&] (const Message &message) {
+        server.send(message);
     });
-    return socket.loop();
+    return server.loop();
 }
 ```

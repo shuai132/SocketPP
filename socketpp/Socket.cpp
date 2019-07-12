@@ -30,6 +30,10 @@ void Socket::onClose() {
     }
 }
 
+void Socket::setPort(int port) {
+    _port = port;
+}
+
 int Socket::getPort() const {
     return _port;
 }

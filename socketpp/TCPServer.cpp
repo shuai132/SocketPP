@@ -4,24 +4,26 @@
 
 #include <algorithm>
 
-#include "SocketPP.h"
+#include "TCPServer.h"
 #include "TCPStream.h"
 #include "epoll.h"
 #include "log.h"
 
-SocketPP::SocketPP(int port)
+namespace SocketPP {
+
+TCPServer::TCPServer(int port)
         : Socket(port) {
     startSendThread();
 }
 
-ssize_t SocketPP::send(const Message &message) {
+ssize_t TCPServer::send(const Message &message) {
     if (!_inited) {
         LOGE("not inited!");
         return SendResult::SocketNotInited;
     }
 
     std::lock_guard<std::mutex> lockStream(_streamMutex);
-    LOGD("SocketPP::send: target=%d, len=%ld", message.target.fd, message.rawMsg.length());
+    LOGD("TCPServer::send: target=%d, len=%ld", message.target.fd, message.rawMsg.length());
 
     if (_sendInterceptor) {
         if (_sendInterceptor(message)) return SendResult::Intercepted;
@@ -49,7 +51,7 @@ ssize_t SocketPP::send(const Message &message) {
     return ret;
 }
 
-void SocketPP::post(const Message &message) {
+void TCPServer::post(const Message &message) {
     if (!_inited)
         return;
 
@@ -59,7 +61,7 @@ void SocketPP::post(const Message &message) {
     _msgQueueCondition.notify_one();
 }
 
-void SocketPP::flush() {
+void TCPServer::flush() {
     std::lock_guard<std::mutex> lock(_msgQueueMutex);
 
     while (!_msgQueue.empty()) {
@@ -68,7 +70,7 @@ void SocketPP::flush() {
     }
 }
 
-void SocketPP::disconnectAllStreams() {
+void TCPServer::disconnectAllStreams() {
     std::lock_guard<std::mutex> lockStream(_streamMutex);
 
     for(auto stream:_connectedStreams) {
@@ -77,11 +79,11 @@ void SocketPP::disconnectAllStreams() {
     _connectedStreams.clear();
 }
 
-const std::vector<TCPStream>& SocketPP::getStreams() {
+const std::vector<TCPStream>& TCPServer::getStreams() {
     return _connectedStreams;
 }
 
-void SocketPP::startSendThread() {
+void TCPServer::startSendThread() {
     new std::thread([this]{
         LOGD("sendThread running...");
         Message msg;
@@ -103,37 +105,37 @@ void SocketPP::startSendThread() {
     });
 }
 
-void SocketPP::setSendInterceptor(const MessageInterceptor &interceptor) {
+void TCPServer::setSendInterceptor(const MessageInterceptor &interceptor) {
     this->_sendInterceptor = interceptor;
 }
 
-void SocketPP::setSendHandle(const MessageHandle &handle) {
+void TCPServer::setSendHandle(const MessageHandle &handle) {
     this->_sendHandle = handle;
 }
 
-void SocketPP::setRecvHandle(const MessageHandle &handle) {
+void TCPServer::setRecvHandle(const MessageHandle &handle) {
     this->_recvHandle = handle;
 }
 
-void SocketPP::setConnHandle(const StreamHandle &handle) {
+void TCPServer::setConnHandle(const StreamHandle &handle) {
     _connHandle = handle;
 }
 
-void SocketPP::setDiscHandle(const StreamHandle &handle) {
+void TCPServer::setDiscHandle(const StreamHandle &handle) {
     _discHandle = handle;
 }
 
-void SocketPP::onSend(TCPStream stream, const Message &message) {
+void TCPServer::onSend(TCPStream stream, const Message &message) {
     if (_sendHandle)
         _sendHandle(message);
 }
 
-void SocketPP::onStart(int efd) {
+void TCPServer::onStart(int efd) {
     Socket::onStart(efd);
     _inited = true;
 }
 
-void SocketPP::onConnected(int fd) {
+void TCPServer::onConnected(int fd) {
     TCPStream stream(fd);
 
     LOGD("get an accept:%d", stream.fd);
@@ -147,7 +149,7 @@ void SocketPP::onConnected(int fd) {
         _connHandle(stream);
 }
 
-void SocketPP::onDisconnected(int fd) {
+void TCPServer::onDisconnected(int fd) {
     std::lock_guard<std::mutex> lockStream(_streamMutex);
     auto iter = std::find_if(_connectedStreams.cbegin(), _connectedStreams.cend(), [&](TCPStream stream){ return stream.fd == fd; });
 
@@ -164,11 +166,13 @@ void SocketPP::onDisconnected(int fd) {
         _discHandle(fd);
 }
 
-void SocketPP::onReceive(const Message &message) {
+void TCPServer::onReceive(const Message &message) {
     if (_recvHandle)
         _recvHandle(message);
 }
 
-void SocketPP::onReceive(int fd, const byte *buf, size_t len) {
-    SocketPP::onReceive(Message::create(fd, buf, len));
+void TCPServer::onReceive(int fd, const byte *buf, size_t len) {
+    TCPServer::onReceive(Message::create(fd, buf, len));
 }
+
+}   // namespace SocketPP

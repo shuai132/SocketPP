@@ -5,20 +5,20 @@ int main() {
     const int port = 6000;
     LOGI("echo server port:%d", port);
 
-    SocketPP socket(port);
+    SocketPP::TCPServer server(port);
 
-    socket.setConnHandle([] (const TCPStream &stream) {
+    server.setConnHandle([] (const TCPStream &stream) {
         LOGI("on connected: fd=%d", stream.fd);
     });
 
-    socket.setDiscHandle([] (const TCPStream &stream) {
+    server.setDiscHandle([] (const TCPStream &stream) {
         LOGI("on disconnected: fd=%d", stream.fd);
     });
 
-    socket.setRecvHandle([&] (const Message &message) {
+    server.setRecvHandle([&] (const Message &message) {
         LOGI("on receive: fd=%d, msg:%s", message.target.fd, message.rawMsg.toString().c_str());
-        socket.send(message);
+        server.send(message);
     });
 
-    return socket.loop();
+    return server.loop();
 }

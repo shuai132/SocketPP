@@ -24,6 +24,8 @@ public:
 
     virtual ~Socket() ;
 
+    void setPort(int port);
+
     int getPort() const;
 
     int loop();

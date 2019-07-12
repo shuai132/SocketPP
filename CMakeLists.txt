@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.1)
 
-include_directories(socketpp socketpp/epoll)
-include_directories(socketpp socketpp/kqueue)
-
+# socketpp library
 add_subdirectory(socketpp)
+target_include_directories(socketpp PRIVATE socketpp socketpp/epoll socketpp/kqueue)
 
+# examples
 add_subdirectory(examples)
+target_include_directories(echo_server PRIVATE socketpp)
+
+# custom
+add_custom_target(make_all cd ${CMAKE_BINARY_DIR} && make)

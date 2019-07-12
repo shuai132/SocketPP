@@ -6,7 +6,12 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_compile_options(-Wall)
 
-aux_source_directory(./lib SOCKET_PP_SRC)
+set(SOCKET_PP_SRC
+        Socket.cpp
+        socket_event.cpp
+        TCPStream.cpp
+        TCPServer.cpp
+        )
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     message("platform is Linux now!")
@@ -22,5 +27,4 @@ add_library(${PROJECT_NAME}
         socket_event.cpp
         Socket.cpp
         TCPStream.cpp
-        SocketPP.cpp
         )
