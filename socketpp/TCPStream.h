@@ -10,10 +10,10 @@
 
 class TCPStream {
 public:
-    int fd = 0;
+    int fd;
 
     // not explicit
-    TCPStream(int fd) : fd(fd) {}
+    TCPStream(int fd = 0) : fd(fd) {}
 
     bool operator==(const TCPStream &right) const;
 

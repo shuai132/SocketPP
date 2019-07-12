@@ -27,10 +27,17 @@ public:
         memcpy(_data, data, len);
     }
 
-    inline void moveMsg(RawMsg& msg) {
+    inline RawMsg& moveMsg(RawMsg& msg) {
+        if (&msg == this)
+            return *this;
+
         _len  = msg._len;
+
+        delete[] _data;
         _data = msg._data;
         msg._data = nullptr;
+
+        return *this;
     }
 
     explicit RawMsg(const byte *data = nullptr, size_t len = 0) {
@@ -59,12 +66,7 @@ public:
     }
 
     RawMsg& operator=(RawMsg&& msg) noexcept {
-        if (&msg == this)
-            return *this;
-
-        delete[] _data;
-        moveMsg(msg);
-        return *this;
+        return moveMsg(msg);
     }
 
     byte *data() const {

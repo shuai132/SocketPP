@@ -7,7 +7,7 @@ a lightweight C++ TCP socket library, powered by epoll on Linux platform and kqu
 ## Features:
 * High performance and high concurrenc benefit from epoll/kqueue
 * Support send queue with thread safe
-* Automatic memory management
+* Automatic memory management and ensure performance by c++ move semantics
 * Multi-instance support
 * Multiplatform support, Linux/macOS and most Unix-like OS.
 
@@ -27,7 +27,7 @@ mkdir build && cd build && cmake .. && make
 int main() {
     const int port = 6000;
     SocketPP socket(port);
-    socket.setRecvHandle([&socket] (Message message) {
+    socket.setRecvHandle([&] (const Message &message) {
         socket.send(message);
     });
     return socket.loop();

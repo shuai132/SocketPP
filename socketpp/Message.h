@@ -12,13 +12,11 @@
 
 class Message {
 public:
-    TCPStream target;
+    Message() = default;
 
-    RawMsg *rawMsg = nullptr;
+    Message(TCPStream target, const std::string& msg) : target(target), rawMsg(msg) {}
 
-    Message() : target(0), rawMsg(nullptr) {}
-
-    Message(TCPStream target, std::string msg) : target(target), rawMsg(new RawMsg(msg)) {}
+    Message(TCPStream target, RawMsg rawMsg) : target(target), rawMsg(std::move(rawMsg)) {}
 
     /**
      * @param target
@@ -27,16 +25,11 @@ public:
      * @return
      */
     static Message create(TCPStream target, const byte *data, size_t len) {
-        return {target, new RawMsg(data, len)};
+        return {target, RawMsg(data, len)};
     }
 
-    void destroy() {
-        delete rawMsg;
-        rawMsg = nullptr;
-    }
+public:
+    TCPStream target;
 
-private:
-    Message(TCPStream target, RawMsg *rawMsg)
-            : target(target), rawMsg(rawMsg) {
-    }
+    RawMsg rawMsg;
 };

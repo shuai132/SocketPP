@@ -17,9 +17,9 @@
 
 class SocketPP : public Socket {
 public:
-    typedef std::function<bool(Message message)> MessageInterceptor;
-    typedef std::function<void(Message message)> MessageHandle;
-    typedef std::function<void(TCPStream stream)> StreamHandle;
+    typedef std::function<bool(const Message &message)> MessageInterceptor;
+    typedef std::function<void(const Message &message)> MessageHandle;
+    typedef std::function<void(const TCPStream &stream)> StreamHandle;
 
     enum SendResult {
         StreamNotFound = -3,
@@ -40,7 +40,7 @@ public:
      *         -2 : not inited
      *         -3 : stream not found
      */
-    ssize_t send(Message &message, bool destroyOnSend = true);
+    ssize_t send(const Message &message);
 
     // post message to queue will be send automatic later
     void post(const Message &message);

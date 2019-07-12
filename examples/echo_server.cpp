@@ -7,16 +7,16 @@ int main() {
 
     SocketPP socket(port);
 
-    socket.setConnHandle([] (TCPStream stream) {
+    socket.setConnHandle([] (const TCPStream &stream) {
         LOGI("on connected: fd=%d", stream.fd);
     });
 
-    socket.setDiscHandle([] (TCPStream stream) {
+    socket.setDiscHandle([] (const TCPStream &stream) {
         LOGI("on disconnected: fd=%d", stream.fd);
     });
 
-    socket.setRecvHandle([&socket] (Message message) {
-        LOGI("on receive: fd=%d, msg:%s", message.target.fd, message.rawMsg->toString().c_str());
+    socket.setRecvHandle([&] (const Message &message) {
+        LOGI("on receive: fd=%d, msg:%s", message.target.fd, message.rawMsg.toString().c_str());
         socket.send(message);
     });
 

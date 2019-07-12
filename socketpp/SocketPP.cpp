@@ -14,14 +14,14 @@ SocketPP::SocketPP(int port)
     startSendThread();
 }
 
-ssize_t SocketPP::send(Message &message, bool destroyOnSend) {
+ssize_t SocketPP::send(const Message &message) {
     if (!_inited) {
         LOGE("not inited!");
         return SendResult::SocketNotInited;
     }
 
     std::lock_guard<std::mutex> lockStream(_streamMutex);
-    LOGD("SocketPP::send: target=%d, len=%ld", message.target.fd, message.rawMsg->length());
+    LOGD("SocketPP::send: target=%d, len=%ld", message.target.fd, message.rawMsg.length());
 
     if (_sendInterceptor) {
         if (_sendInterceptor(message)) return SendResult::Intercepted;
@@ -38,7 +38,7 @@ ssize_t SocketPP::send(Message &message, bool destroyOnSend) {
 
     LOGD("try to send to stream:%d", stream.fd);
     auto& rawMsg = message.rawMsg;
-    ssize_t ret = stream.send(rawMsg->data(), rawMsg->length());
+    ssize_t ret = stream.send(rawMsg.data(), rawMsg.length());
 
     if (ret == -1) {
         LOGE("send failed!");
@@ -46,9 +46,6 @@ ssize_t SocketPP::send(Message &message, bool destroyOnSend) {
         LOGD("send success! len:%ld", ret);
     }
 
-    if (destroyOnSend) {
-        message.destroy();
-    }
     return ret;
 }
 
