@@ -55,7 +55,7 @@ public:
     /**
      * @param interceptor return true: intercept it, false or not.
      */
-    void setSendInterceptor(const MessageInterceptor &handle);
+    void setSendInterceptor(const MessageInterceptor &interceptor);
 
     void setSendHandle(const MessageHandle &handle);
     void setRecvHandle(const MessageHandle &handle);

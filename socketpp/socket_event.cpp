@@ -19,6 +19,11 @@ void sk_on_start(int efd, void *userdata) {
     socket->onStart(efd);
 }
 
+void sk_on_close(int efd) {
+    LOGD("sk_on_close:efd=%d", efd);
+    Socket::getSocket(efd)->onClose();
+}
+
 /**
  * after connected
  * @param efd

@@ -196,5 +196,7 @@ int ep_start_loop(const char *port, void *userdata)
     }
 
     close(epoll);
+    sk_on_close(epoll);
+
     return 0;
 }

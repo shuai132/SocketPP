@@ -5,27 +5,29 @@
 #include "Socket.h"
 #include "socket_platform.h"
 
-std::map<int, Socket*> Socket::fdMap;
+std::map<int, Socket*> Socket::_efdSocketMap;
 
 Socket::Socket(int port)
         : _port(port) {
 }
 
 Socket::~Socket() {
-    LOGD("socket=%p", this);
-    auto iter = std::find_if(fdMap.cbegin(), fdMap.cend(), [&](std::pair<int, Socket*> epollSocket) {
-        return epollSocket.second == this;
-    });
-    if (iter != fdMap.cend()) {
-        fdMap.erase(iter);
-    }
+    onClose();
 }
 
 void Socket::onStart(int efd) {
-    fdMap[efd] = this;
+    _efdSocketMap[efd] = this;
 }
 
 void Socket::onClose() {
+    auto iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](std::pair<int, Socket*> epollSocket) {
+        return epollSocket.second == this;
+    });
+    if (iter != _efdSocketMap.cend()) {
+        _efdSocketMap.erase(iter);
+    } else {
+        LOGE("no efd in socket:%p", this);
+    }
 }
 
 int Socket::getPort() const {
@@ -38,7 +40,7 @@ int Socket::loop() {
 }
 
 Socket *Socket::getSocket(int efd) {
-    return fdMap.at(efd);
+    return _efdSocketMap.at(efd);
 }
 
 ssize_t Socket::write(int fd, const byte *data, size_t length) {

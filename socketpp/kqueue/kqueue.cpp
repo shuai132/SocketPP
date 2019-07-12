@@ -181,5 +181,7 @@ int kq_start_loop(int port, void *userdata) {
     }
 
     close(epollfd);
+    sk_on_close(epollfd);
+
     return 0;
 }

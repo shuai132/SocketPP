@@ -106,8 +106,8 @@ void SocketPP::startSendThread() {
     });
 }
 
-void SocketPP::setSendInterceptor(const MessageInterceptor &handle) {
-    this->_sendInterceptor = handle;
+void SocketPP::setSendInterceptor(const MessageInterceptor &interceptor) {
+    this->_sendInterceptor = interceptor;
 }
 
 void SocketPP::setSendHandle(const MessageHandle &handle) {

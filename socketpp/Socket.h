@@ -30,7 +30,7 @@ public:
 
 public:
     /**
-     * get mapped socket by epoll fd
+     * get mapped socket by efd
      * exception: throw std::out_of_range exception if there is no socket for efd
      * @param efd
      * @return
@@ -42,5 +42,5 @@ public:
 private:
     int _port;
 
-    static std::map<int, Socket*> fdMap;
+    static std::map<int, Socket*> _efdSocketMap;
 };
