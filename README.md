@@ -33,3 +33,24 @@ int main() {
     return server.loop();
 }
 ```
+and then use nc tools, or run client example:
+```bash
+nc localhost 6000
+```
+or
+```cpp
+#include "SocketPP.h"
+#include "log.h"
+
+int main() {
+    const int port = 6000;
+    SocketPP::TCPClient client("127.0.0.1", port);
+    client.setConnHandle([&] (const TCPStream &stream) {
+        client.send("hello");
+    });
+    client.setRecvHandle([&] (const Message &message) {
+        LOGI("on receive: msg:%s", message.rawMsg.toString().c_str());
+    });
+    return client.loop();
+}
+```

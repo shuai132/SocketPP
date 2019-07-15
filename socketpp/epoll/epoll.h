@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
-int ep_start_loop(const char *port, void *userdata);
+int ep_server_start_loop(const char *port, void *userdata);
+
+int ep_connect_and_loop(const char *host, int port, void *userdata);
 
 void ep_end_loop(void);
 

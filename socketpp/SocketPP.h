@@ -5,3 +5,4 @@
 #pragma once
 
 #include "TCPServer.h"
+#include "TCPClient.h"

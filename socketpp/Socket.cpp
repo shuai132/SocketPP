@@ -2,6 +2,8 @@
 // Created by liushuai on 19-7-11.
 //
 
+#include <algorithm>
+
 #include "Socket.h"
 #include "socket_platform.h"
 
@@ -20,27 +22,14 @@ void Socket::onStart(int efd) {
 }
 
 void Socket::onClose() {
-    auto iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](std::pair<int, Socket*> epollSocket) {
-        return epollSocket.second == this;
+    auto iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](std::pair<int, Socket*> pair) {
+        return pair.second == this;
     });
     if (iter != _efdSocketMap.cend()) {
         _efdSocketMap.erase(iter);
     } else {
         LOGE("no efd in socket:%p", this);
     }
-}
-
-void Socket::setPort(int port) {
-    _port = port;
-}
-
-int Socket::getPort() const {
-    return _port;
-}
-
-int Socket::loop() {
-    LOGD("socket=%p, port=%d", this, _port);
-    return sk_start_loop(_port, this);
 }
 
 Socket *Socket::getSocket(int efd) {

@@ -1,5 +1,5 @@
 //
-// Created by liushuai on 2019/7/10.
+// Created by liushuai on 2019/7/13.
 //
 
 #pragma once
@@ -12,26 +12,25 @@
 #include <condition_variable>
 #include <functional>
 
-#include "SocketServer.h"
+#include "SocketClient.h"
 #include "Message.h"
 
 namespace SocketPP {
 
-class TCPServer : public SocketServer {
+class TCPClient : public SocketClient {
 public:
     typedef std::function<bool(const Message &message)> MessageInterceptor;
     typedef std::function<void(const Message &message)> MessageHandle;
     typedef std::function<void(const TCPStream &stream)> StreamHandle;
 
     enum SendResult {
-        StreamNotFound = -3,
-        SocketNotInited = -2,
+        NotConnected = -2,
         SendError = -1,
         Intercepted = 0,
     };
 
 public:
-    explicit TCPServer(int port = 6000);
+    explicit TCPClient(const std::string& ip, int port = 6000);
 
     /**
      * send message immediately with thread safe
@@ -44,15 +43,15 @@ public:
      */
     ssize_t send(const Message &message);
 
+    ssize_t send(const std::string &str);
+
     // post message to queue will be send automatic later
     void post(const Message &message);
 
     // flush all posted messages
     void flush();
 
-    void disconnectAllStreams();
-
-    const std::vector<TCPStream>& getStreams();
+    void disconnect();
 
     /**
      * @param interceptor return true: intercept it, false or not.
@@ -75,13 +74,12 @@ public:
 private:
     void startSendThread();
 
-    void onSend(TCPStream stream, const Message &message);
+    void onSend(const Message &message);
 
 private:
-    bool _inited = false;
+    bool _connected = false;
 
-    std::vector<TCPStream> _connectedStreams;
-    std::mutex _streamMutex;
+    TCPStream _streamPeer;
 
     std::queue<Message> _msgQueue;
     std::mutex _msgQueueMutex;

@@ -12,7 +12,7 @@
 namespace SocketPP {
 
 TCPServer::TCPServer(int port)
-        : Socket(port) {
+        : SocketServer(port) {
     startSendThread();
 }
 
@@ -131,7 +131,7 @@ void TCPServer::onSend(TCPStream stream, const Message &message) {
 }
 
 void TCPServer::onStart(int efd) {
-    Socket::onStart(efd);
+    SocketServer::onStart(efd);
     _inited = true;
 }
 

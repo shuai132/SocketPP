@@ -22,7 +22,7 @@ void sk_on_connected(int efd, int fd);
 
 void sk_on_disconnected(int efd, int fd);
 
-void sk_on_read_data(int efd, int fd, byte *buf, int cnt);
+void sk_on_read_data(int efd, int fd, byte *buf, int len);
 
 void sk_on_read_error(int efd, int fd);
 

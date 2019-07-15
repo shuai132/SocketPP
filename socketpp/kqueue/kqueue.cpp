@@ -12,6 +12,7 @@
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <netdb.h>
 
 #include "kqueue.h"
 #include "socket_event.h"
@@ -126,7 +127,7 @@ static void handleWrite(int efd, int fd) {
     updateEvents(efd, fd, kReadEvent, true);
 }
 
-static void loop_once(int efd, int lfd, int waitms) {
+static void loop_once(int efd, int lfd, int waitms, bool isServer) {
     struct timespec timeout;
     timeout.tv_sec = waitms / 1000;
     timeout.tv_nsec = (waitms % 1000) * 1000 * 1000;
@@ -138,8 +139,12 @@ static void loop_once(int efd, int lfd, int waitms) {
         int fd = (int) (intptr_t) activeEvs[i].udata;
         int events = activeEvs[i].filter;
         if (events == EVFILT_READ) {
-            if (fd == lfd) {
-                handleAccept(efd, fd);
+            if (isServer) {
+                if (fd == lfd) {
+                    handleAccept(efd, fd);
+                } else {
+                    handleRead(efd, fd);
+                }
             } else {
                 handleRead(efd, fd);
             }
@@ -151,7 +156,7 @@ static void loop_once(int efd, int lfd, int waitms) {
     }
 }
 
-int kq_start_loop(int port, void *userdata) {
+int kq_server_start_loop(int port, void *userdata) {
     int epollfd = kqueue();
     return_err_int_if(epollfd < 0, "kqueue failed");
 
@@ -164,10 +169,10 @@ int kq_start_loop(int port, void *userdata) {
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
     int r = ::bind(listenfd, (struct sockaddr *) &addr, sizeof(struct sockaddr));
-    return_err_int_if(r, "bind to 0.0.0.0:%d failed %d %s", port, errno, strerror(errno));
+    return_err_int_if(r != 0, "bind to 0.0.0.0:%d failed %d %s", port, errno, strerror(errno));
 
     r = listen(listenfd, 20);
-    return_err_int_if(r, "listen failed %d %s", errno, strerror(errno));
+    return_err_int_if(r != 0, "listen failed %d %s", errno, strerror(errno));
 
     LOGD("fd %d listening at %d", listenfd, port);
     setNonBlock(listenfd);
@@ -177,11 +182,50 @@ int kq_start_loop(int port, void *userdata) {
 
     for (;;) {
         //实际应用应当注册信号处理函数，退出时清理资源
-        loop_once(epollfd, listenfd, 10000);
+        loop_once(epollfd, listenfd, 10000, true);
     }
 
     close(epollfd);
     sk_on_close(epollfd);
+
+    return 0;
+}
+
+int kq_connect_and_loop(const char *host, int port, void *userdata) {
+    int kq = kqueue();
+    return_err_int_if(kq < 0, "kqueue failed");
+
+    int sckfd = socket(AF_INET, SOCK_STREAM, 0);
+    return_err_int_if(sckfd < 0, "socket failed");
+
+    updateEvents(kq, sckfd, kReadEvent, false);
+
+    sk_on_start(kq, userdata);
+
+    struct hostent *hp = gethostbyname(host);
+    return_err_int_if(hp == NULL, "gethostbyname");
+
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr = *((struct in_addr *)hp->h_addr);
+    memset(&(addr.sin_zero), 0, 8);
+
+    ssize_t fd = connect(sckfd, (struct sockaddr *)&addr, sizeof(struct sockaddr));
+    return_err_int_if(fd < 0, "connect failed");
+
+    setNonBlock(sckfd);
+    updateEvents(kq, sckfd, kReadEvent, false);
+
+    sk_on_connected(kq, sckfd);
+
+    for (;;) {
+        //实际应用应当注册信号处理函数，退出时清理资源
+        loop_once(kq, sckfd, 10000, false);
+    }
+
+    close(kq);
+    sk_on_close(kq);
 
     return 0;
 }

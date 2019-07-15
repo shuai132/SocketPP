@@ -16,7 +16,9 @@
 #define LOGF(fmt, ...)          do{ printf(fmt "\n", ##__VA_ARGS__); } while(0)
 #define LOGT(tag, fmt, ...)     do{ printf(tag ": " fmt "\n", ##__VA_ARGS__); } while(0)
 #define LOGI(fmt, ...)          do{ fprintf(stdout, "%s: " fmt "\n", __FILENAME__, ##__VA_ARGS__); } while(0)
-#define LOGE(fmt, ...)          do{ fprintf(stdout, "ERROR: %s: %s: %d: " fmt "\n", __FILENAME__, __func__, __LINE__, ##__VA_ARGS__); } while(0)
+#define LOGE(fmt, ...)          do{ perror(""); \
+                                    fprintf(stdout, "ERROR: %s: %s: %d: " fmt "\n", __FILENAME__, __func__, __LINE__, ##__VA_ARGS__); \
+                                } while(0)
 
 #ifdef NDEBUG
     #define LOGD(fmt, ...)  ((void)0)

@@ -16,6 +16,8 @@ public:
 
     Message(TCPStream target, const std::string& msg) : target(target), rawMsg(msg) {}
 
+    Message(const std::string& msg) : target(0), rawMsg(msg) {}
+
     Message(TCPStream target, RawMsg rawMsg) : target(target), rawMsg(std::move(rawMsg)) {}
 
     /**

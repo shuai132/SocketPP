@@ -5,30 +5,37 @@
 #pragma once
 
 #include <map>
-#include <algorithm>
 
 #include "type.h"
 #include "log.h"
 
 class Socket {
 public:
-    virtual void onStart(int efd);
-    virtual void onClose();
-
     virtual void onConnected(int fd) = 0;
+
     virtual void onDisconnected(int fd) = 0;
+
     virtual void onReceive(int fd, const byte *buf, size_t len) = 0;
 
+    virtual int loop() = 0;
+
 public:
-    explicit Socket(int port);
+    inline void setPort(int port) { _port = port; };
 
-    virtual ~Socket() ;
+    inline int getPort() const { return _port; }
 
-    void setPort(int port);
+public:
+    virtual void onStart(int efd);
 
-    int getPort() const;
+    virtual void onClose();
 
-    int loop();
+protected:
+    explicit Socket(int port = 6000);
+
+    virtual ~Socket();
+
+protected:
+    int _port;
 
 public:
     /**
@@ -42,7 +49,5 @@ public:
     static ssize_t write(int fd, const byte *data, size_t length);
 
 private:
-    int _port;
-
     static std::map<int, Socket*> _efdSocketMap;
 };

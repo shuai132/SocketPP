@@ -6,9 +6,25 @@
 extern "C" {
 #endif
 
-int kq_start_loop(int port, void *userdata);
+/**
+ * return if error
+ * @param port
+ * @param userdata
+ * @return
+ */
+int kq_server_start_loop(int port, void *userdata);
 
-void kq_end_loop(void);
+/**
+ * return if connect failed
+ * @param host
+ * @param port
+ * @param userdata
+ * @return
+ */
+int kq_connect_and_loop(const char *host, int port, void *userdata);
+
+// todo: end loop
+// void kq_end_loop(void);
 
 #ifdef __cplusplus
 }
