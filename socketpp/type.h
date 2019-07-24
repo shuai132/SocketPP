@@ -4,4 +4,4 @@
 
 #pragma once
 
-typedef unsigned char byte;
+using byte = unsigned char;

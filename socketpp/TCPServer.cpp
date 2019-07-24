@@ -6,7 +6,6 @@
 
 #include "TCPServer.h"
 #include "TCPStream.h"
-#include "epoll.h"
 #include "log.h"
 
 namespace SocketPP {
@@ -16,8 +15,15 @@ TCPServer::TCPServer(int port)
     startSendThread();
 }
 
+TCPServer::~TCPServer() {
+    _stoped = true;
+    _msgQueueCondition.notify_one();
+    _sendThread->join();
+    delete _sendThread;
+}
+
 ssize_t TCPServer::send(const Message &message) {
-    if (!_inited) {
+    if (!_started) {
         LOGE("not inited!");
         return SendResult::SocketNotInited;
     }
@@ -29,17 +35,17 @@ ssize_t TCPServer::send(const Message &message) {
         if (_sendInterceptor(message)) return SendResult::Intercepted;
     }
 
-    auto iter = std::find(_connectedStreams.cbegin(), _connectedStreams.cend(), message.target);
+    const auto &iter = std::find(_connectedStreams.cbegin(), _connectedStreams.cend(), message.target);
     if (iter == _connectedStreams.cend()) {
         LOGE("StreamNotFound");
         return StreamNotFound;
     }
 
-    auto stream = *iter;
+    const auto &stream = *iter;
     onSend(stream, message);
 
     LOGD("try to send to stream:%d", stream.fd);
-    auto& rawMsg = message.rawMsg;
+    const auto &rawMsg = message.rawMsg;
     ssize_t ret = stream.send(rawMsg.data(), rawMsg.length());
 
     if (ret == -1) {
@@ -52,7 +58,7 @@ ssize_t TCPServer::send(const Message &message) {
 }
 
 void TCPServer::post(const Message &message) {
-    if (!_inited)
+    if (!_started)
         return;
 
     _msgQueueMutex.lock();
@@ -84,7 +90,7 @@ const std::vector<TCPStream>& TCPServer::getStreams() {
 }
 
 void TCPServer::startSendThread() {
-    new std::thread([this]{
+    _sendThread = new std::thread([this]{
         LOGD("sendThread running...");
         Message msg;
 
@@ -93,8 +99,10 @@ void TCPServer::startSendThread() {
                 std::unique_lock<std::mutex> lock(_msgQueueMutex);
                 LOGD("_msgQueue.size=%ld, _msgQueueCondition will %s", _msgQueue.size(),
                      _msgQueue.empty() ? "waiting..." : "not wait!");
-                _msgQueueCondition.wait(lock, [this] { return !_msgQueue.empty(); });
+                _msgQueueCondition.wait(lock, [this] { return !_msgQueue.empty() || _stoped; });
                 LOGD("_msgQueueCondition wake! _msgQueue.size=%ld", _msgQueue.size());
+
+                if (_stoped) return;
 
                 msg = _msgQueue.front();
                 _msgQueue.pop();
@@ -125,14 +133,14 @@ void TCPServer::setDiscHandle(const StreamHandle &handle) {
     _discHandle = handle;
 }
 
-void TCPServer::onSend(TCPStream stream, const Message &message) {
+void TCPServer::onSend(const TCPStream &, const Message &message) {
     if (_sendHandle)
         _sendHandle(message);
 }
 
 void TCPServer::onStart(int efd) {
     SocketServer::onStart(efd);
-    _inited = true;
+    _started = true;
 }
 
 void TCPServer::onConnected(int fd) {

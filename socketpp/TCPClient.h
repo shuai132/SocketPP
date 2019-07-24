@@ -48,6 +48,8 @@ public:
     // post message to queue will be send automatic later
     void post(const Message &message);
 
+    void post(const std::string &str);
+
     // flush all posted messages
     void flush();
 

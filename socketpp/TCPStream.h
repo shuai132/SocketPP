@@ -17,5 +17,5 @@ public:
 
     bool operator==(const TCPStream &right) const;
 
-    ssize_t send(const byte *data, size_t length);
+    ssize_t send(const byte *data, size_t length) const;
 };

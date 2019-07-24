@@ -19,9 +19,9 @@ namespace SocketPP {
 
 class TCPServer : public SocketServer {
 public:
-    typedef std::function<bool(const Message &message)> MessageInterceptor;
-    typedef std::function<void(const Message &message)> MessageHandle;
-    typedef std::function<void(const TCPStream &stream)> StreamHandle;
+    using MessageInterceptor = std::function<bool(const Message &message)>;
+    using MessageHandle = std::function<void(const Message &message)>;
+    using StreamHandle = std::function<void(const TCPStream &stream)>;
 
     enum SendResult {
         StreamNotFound = -3,
@@ -32,6 +32,8 @@ public:
 
 public:
     explicit TCPServer(int port = 6000);
+
+    virtual ~TCPServer();
 
     /**
      * send message immediately with thread safe
@@ -75,10 +77,13 @@ public:
 private:
     void startSendThread();
 
-    void onSend(TCPStream stream, const Message &message);
+    void onSend(const TCPStream &stream, const Message &message);
 
 private:
-    bool _inited = false;
+    bool _started = false;
+    bool _stoped = false;
+
+    std::thread *_sendThread = nullptr;
 
     std::vector<TCPStream> _connectedStreams;
     std::mutex _streamMutex;

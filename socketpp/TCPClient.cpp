@@ -6,7 +6,6 @@
 
 #include "TCPClient.h"
 #include "TCPStream.h"
-#include "epoll.h"
 #include "log.h"
 
 namespace SocketPP {
@@ -31,7 +30,7 @@ ssize_t TCPClient::send(const Message &message) {
     onSend(message);
 
     LOGD("try to send to stream:%d", _streamPeer.fd);
-    auto& rawMsg = message.rawMsg;
+    const auto &rawMsg = message.rawMsg;
     ssize_t ret = _streamPeer.send(rawMsg.data(), rawMsg.length());
 
     if (ret == -1) {
@@ -55,6 +54,10 @@ void TCPClient::post(const Message &message) {
     _msgQueue.push(message);
     _msgQueueMutex.unlock();
     _msgQueueCondition.notify_one();
+}
+
+void TCPClient::post(const std::string &str) {
+    post(Message(str));
 }
 
 void TCPClient::flush() {

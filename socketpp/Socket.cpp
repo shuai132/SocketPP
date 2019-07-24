@@ -22,7 +22,9 @@ void Socket::onStart(int efd) {
 }
 
 void Socket::onClose() {
-    auto iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](std::pair<int, Socket*> pair) {
+    if (_efdSocketMap.empty()) return;
+
+    const auto &iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](const std::pair<int, Socket*> &pair) {
         return pair.second == this;
     });
     if (iter != _efdSocketMap.cend()) {
