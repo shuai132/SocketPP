@@ -3,7 +3,7 @@
 //
 
 #include "socket_platform.h"
-#include "kqueue.h"
+#include "kqueue/kqueue.h"
 
 int sk_server_start_loop(int port, void *userdata) {
     return kq_server_start_loop(port, userdata);
