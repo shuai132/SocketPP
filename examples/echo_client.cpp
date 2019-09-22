@@ -1,24 +1,15 @@
 #include "SocketPP.h"
-#include "log.h"
+
+using namespace SocketPP;
 
 int main() {
     const int port = 6000;
-    LOGI("client will connect port:%d", port);
-
-    SocketPP::TCPClient client("127.0.0.1", port);
-
-    client.setConnHandle([&] (const TCPStream &stream) {
-        LOGI("on connected: fd=%d", stream.fd);
-        client.send("hello");
+    TCPClient client("127.0.0.1", port);
+    client.setConnHandle([&] (const TCPStream& stream) {
+        client.send("hello\n");
     });
-
-    client.setDiscHandle([] (const TCPStream &stream) {
-        LOGI("on disconnected: fd=%d", stream.fd);
+    client.setRecvHandle([&] (const Message& message) {
+        LOGI("on receive: msg:%s", message.rawMsg.toString().c_str());
     });
-
-    client.setRecvHandle([&] (const Message &message) {
-        LOGI("on receive: fd=%d, msg:%s", message.target.fd, message.rawMsg.toString().c_str());
-    });
-
     return client.loop();
 }

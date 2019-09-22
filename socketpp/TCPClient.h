@@ -19,9 +19,9 @@ namespace SocketPP {
 
 class TCPClient : public SocketClient {
 public:
-    typedef std::function<bool(const Message &message)> MessageInterceptor;
-    typedef std::function<void(const Message &message)> MessageHandle;
-    typedef std::function<void(const TCPStream &stream)> StreamHandle;
+    typedef std::function<bool(const Message&)> MessageInterceptor;
+    typedef std::function<void(const Message&)> MessageHandle;
+    typedef std::function<void(const TCPStream&)> StreamHandle;
 
     enum SendResult {
         NotConnected = -2,
@@ -41,14 +41,14 @@ public:
      *         -2 : not inited
      *         -3 : stream not found
      */
-    ssize_t send(const Message &message);
+    ssize_t send(const Message& message);
 
-    ssize_t send(const std::string &str);
+    ssize_t send(const std::string& str);
 
     // post message to queue will be send automatic later
-    void post(const Message &message);
+    void post(const Message& message);
 
-    void post(const std::string &str);
+    void post(const std::string& str);
 
     // flush all posted messages
     void flush();
@@ -58,41 +58,47 @@ public:
     /**
      * @param interceptor return true: intercept it, false or not.
      */
-    void setSendInterceptor(const MessageInterceptor &interceptor);
+    void setSendInterceptor(const MessageInterceptor& interceptor);
 
-    void setSendHandle(const MessageHandle &handle);
-    void setRecvHandle(const MessageHandle &handle);
-    void setConnHandle(const StreamHandle &handle);
-    void setDiscHandle(const StreamHandle &handle);
+    void setSendHandle(const MessageHandle& handle);
 
-    void onReceive(const Message &message);
+    void setRecvHandle(const MessageHandle& handle);
+
+    void setConnHandle(const StreamHandle& handle);
+
+    void setDiscHandle(const StreamHandle& handle);
+
+    void onReceive(const Message& message);
 
 public:
-    virtual void onStart(int efd) override;
-    virtual void onConnected(int fd) override;
-    virtual void onDisconnected(int fd) override;
-    virtual void onReceive(int fd, const byte *buf, size_t len) override;
+    void onStart(int efd) override;
+
+    void onConnected(int fd) override;
+
+    void onDisconnected(int fd) override;
+
+    void onReceive(int fd, const byte* buf, size_t len) override;
 
 private:
     void startSendThread();
 
-    void onSend(const Message &message);
+    void onSend(const Message& message);
 
 private:
-    bool _connected = false;
+    bool connected_ = false;
 
-    TCPStream _streamPeer;
+    TCPStream streamPeer_;
 
-    std::queue<Message> _msgQueue;
-    std::mutex _msgQueueMutex;
-    std::condition_variable _msgQueueCondition;
+    std::queue<Message> msgQueue_;
+    std::mutex msgQueueMutex_;
+    std::condition_variable msgQueueCondition_;
 
-    MessageInterceptor _sendInterceptor = nullptr;
-    MessageHandle _sendHandle = nullptr;
-    MessageHandle _recvHandle = nullptr;
+    MessageInterceptor sendInterceptor_ = nullptr;
+    MessageHandle sendHandle_ = nullptr;
+    MessageHandle recvHandle_ = nullptr;
 
-    StreamHandle _connHandle = nullptr;
-    StreamHandle _discHandle = nullptr;
+    StreamHandle connHandle_ = nullptr;
+    StreamHandle discHandle_ = nullptr;
 };
 
 }   // namespace SocketPP

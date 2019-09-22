@@ -16,36 +16,36 @@ TCPServer::TCPServer(int port)
 }
 
 TCPServer::~TCPServer() {
-    _stoped = true;
-    _msgQueueCondition.notify_one();
-    _sendThread->join();
-    delete _sendThread;
+    stopped_ = true;
+    msgQueueCondition_.notify_one();
+    sendThread_->join();
+    delete sendThread_;
 }
 
-ssize_t TCPServer::send(const Message &message) {
-    if (!_started) {
+ssize_t TCPServer::send(const Message& message) {
+    if (!started_) {
         LOGE("not inited!");
         return SendResult::SocketNotInited;
     }
 
-    std::lock_guard<std::mutex> lockStream(_streamMutex);
+    std::lock_guard<std::mutex> lockStream(streamMutex_);
     LOGD("TCPServer::send: target=%d, len=%ld", message.target.fd, message.rawMsg.length());
 
-    if (_sendInterceptor) {
-        if (_sendInterceptor(message)) return SendResult::Intercepted;
+    if (sendInterceptor_) {
+        if (sendInterceptor_(message)) return SendResult::Intercepted;
     }
 
-    const auto &iter = std::find(_connectedStreams.cbegin(), _connectedStreams.cend(), message.target);
-    if (iter == _connectedStreams.cend()) {
+    const auto& iter = std::find(connectedStreams_.cbegin(), connectedStreams_.cend(), message.target);
+    if (iter == connectedStreams_.cend()) {
         LOGE("StreamNotFound");
         return StreamNotFound;
     }
 
-    const auto &stream = *iter;
+    const auto& stream = *iter;
     onSend(stream, message);
 
     LOGD("try to send to stream:%d", stream.fd);
-    const auto &rawMsg = message.rawMsg;
+    const auto& rawMsg = message.rawMsg;
     ssize_t ret = stream.send(rawMsg.data(), rawMsg.length());
 
     if (ret == -1) {
@@ -57,55 +57,55 @@ ssize_t TCPServer::send(const Message &message) {
     return ret;
 }
 
-void TCPServer::post(const Message &message) {
-    if (!_started)
+void TCPServer::post(const Message& message) {
+    if (!started_)
         return;
 
-    _msgQueueMutex.lock();
-    _msgQueue.push(message);
-    _msgQueueMutex.unlock();
-    _msgQueueCondition.notify_one();
+    msgQueueMutex_.lock();
+    msgQueue_.push(message);
+    msgQueueMutex_.unlock();
+    msgQueueCondition_.notify_one();
 }
 
 void TCPServer::flush() {
-    std::lock_guard<std::mutex> lock(_msgQueueMutex);
+    std::lock_guard<std::mutex> lock(msgQueueMutex_);
 
-    while (!_msgQueue.empty()) {
-        send(_msgQueue.front());
-        _msgQueue.pop();
+    while (!msgQueue_.empty()) {
+        send(msgQueue_.front());
+        msgQueue_.pop();
     }
 }
 
 void TCPServer::disconnectAllStreams() {
-    std::lock_guard<std::mutex> lockStream(_streamMutex);
+    std::lock_guard<std::mutex> lockStream(streamMutex_);
 
-    for(auto stream:_connectedStreams) {
+    for (auto stream:connectedStreams_) {
         onDisconnected(stream.fd);
     }
-    _connectedStreams.clear();
+    connectedStreams_.clear();
 }
 
 const std::vector<TCPStream>& TCPServer::getStreams() {
-    return _connectedStreams;
+    return connectedStreams_;
 }
 
 void TCPServer::startSendThread() {
-    _sendThread = new std::thread([this]{
+    sendThread_ = new std::thread([this] {
         LOGD("sendThread running...");
         Message msg;
 
         while (true) {
             {
-                std::unique_lock<std::mutex> lock(_msgQueueMutex);
-                LOGD("_msgQueue.size=%ld, _msgQueueCondition will %s", _msgQueue.size(),
-                     _msgQueue.empty() ? "waiting..." : "not wait!");
-                _msgQueueCondition.wait(lock, [this] { return !_msgQueue.empty() || _stoped; });
-                LOGD("_msgQueueCondition wake! _msgQueue.size=%ld", _msgQueue.size());
+                std::unique_lock<std::mutex> lock(msgQueueMutex_);
+                LOGD("msgQueue_.size=%ld, msgQueueCondition_ will %s", msgQueue_.size(),
+                     msgQueue_.empty() ? "waiting..." : "not wait!");
+                msgQueueCondition_.wait(lock, [this] { return !msgQueue_.empty() || stopped_; });
+                LOGD("msgQueueCondition_ wake! msgQueue_.size=%ld", msgQueue_.size());
 
-                if (_stoped) return;
+                if (stopped_) return;
 
-                msg = _msgQueue.front();
-                _msgQueue.pop();
+                msg = msgQueue_.front();
+                msgQueue_.pop();
             }
 
             send(msg);
@@ -113,73 +113,74 @@ void TCPServer::startSendThread() {
     });
 }
 
-void TCPServer::setSendInterceptor(const MessageInterceptor &interceptor) {
-    this->_sendInterceptor = interceptor;
+void TCPServer::setSendInterceptor(const MessageInterceptor& interceptor) {
+    this->sendInterceptor_ = interceptor;
 }
 
-void TCPServer::setSendHandle(const MessageHandle &handle) {
-    this->_sendHandle = handle;
+void TCPServer::setSendHandle(const MessageHandle& handle) {
+    this->sendHandle_ = handle;
 }
 
-void TCPServer::setRecvHandle(const MessageHandle &handle) {
-    this->_recvHandle = handle;
+void TCPServer::setRecvHandle(const MessageHandle& handle) {
+    this->recvHandle_ = handle;
 }
 
-void TCPServer::setConnHandle(const StreamHandle &handle) {
-    _connHandle = handle;
+void TCPServer::setConnHandle(const StreamHandle& handle) {
+    connHandle_ = handle;
 }
 
-void TCPServer::setDiscHandle(const StreamHandle &handle) {
-    _discHandle = handle;
+void TCPServer::setDiscHandle(const StreamHandle& handle) {
+    discHandle_ = handle;
 }
 
-void TCPServer::onSend(const TCPStream &, const Message &message) {
-    if (_sendHandle)
-        _sendHandle(message);
+void TCPServer::onSend(const TCPStream&, const Message& message) {
+    if (sendHandle_)
+        sendHandle_(message);
 }
 
 void TCPServer::onStart(int efd) {
     SocketServer::onStart(efd);
-    _started = true;
+    started_ = true;
 }
 
 void TCPServer::onConnected(int fd) {
     TCPStream stream(fd);
 
     LOGD("get an accept:%d", stream.fd);
-    _streamMutex.lock();
-    _connectedStreams.push_back(stream);
-    _streamMutex.unlock();
+    streamMutex_.lock();
+    connectedStreams_.push_back(stream);
+    streamMutex_.unlock();
 
-    LOGD("_connectedStreams.size()=%ld", _connectedStreams.size());
+    LOGD("connectedStreams_.size()=%ld", connectedStreams_.size());
 
-    if (_connHandle)
-        _connHandle(stream);
+    if (connHandle_)
+        connHandle_(stream);
 }
 
 void TCPServer::onDisconnected(int fd) {
-    std::lock_guard<std::mutex> lockStream(_streamMutex);
-    auto iter = std::find_if(_connectedStreams.cbegin(), _connectedStreams.cend(), [&](TCPStream stream){ return stream.fd == fd; });
+    std::lock_guard<std::mutex> lockStream(streamMutex_);
+    auto iter = std::find_if(connectedStreams_.cbegin(), connectedStreams_.cend(),
+                             [&](TCPStream stream) { return stream.fd == fd; });
 
-    if (iter == _connectedStreams.cend()) {
-        LOGE("fd:%d is not in _connectedStreams!", fd);
+    if (iter == connectedStreams_.cend()) {
+        LOGE("fd:%d is not in connectedStreams_!", fd);
         return;
     }
 
-    _connectedStreams.erase(iter);
+    connectedStreams_.erase(iter);
 
-    LOGD("_connectedStreams.size()=%ld", _connectedStreams.size());
+    LOGD("connectedStreams_.size()=%ld", connectedStreams_.size());
 
-    if (_discHandle)
-        _discHandle(fd);
+    if (discHandle_)
+        discHandle_(fd);
 }
 
-void TCPServer::onReceive(const Message &message) {
-    if (_recvHandle)
-        _recvHandle(message);
+void TCPServer::onReceive(const Message& message) {
+    if (recvHandle_)
+        recvHandle_(message);
 }
 
-void TCPServer::onReceive(int fd, const byte *buf, size_t len) {
+void TCPServer::onReceive(int fd, const byte* buf, size_t len) {
     TCPServer::onReceive(Message::create(fd, buf, len));
 }
 

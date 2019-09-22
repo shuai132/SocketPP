@@ -7,10 +7,12 @@
 #include "Socket.h"
 #include "socket_platform.h"
 
-std::map<int, Socket*> Socket::_efdSocketMap;
+namespace SocketPP {
+
+std::map<int, Socket*> Socket::efdSocketMap_;
 
 Socket::Socket(int port)
-        : _port(port) {
+        : port_(port) {
 }
 
 Socket::~Socket() {
@@ -18,26 +20,29 @@ Socket::~Socket() {
 }
 
 void Socket::onStart(int efd) {
-    _efdSocketMap[efd] = this;
+    efdSocketMap_[efd] = this;
 }
 
 void Socket::onClose() {
-    if (_efdSocketMap.empty()) return;
+    if (efdSocketMap_.empty()) return;
 
-    const auto &iter = std::find_if(_efdSocketMap.cbegin(), _efdSocketMap.cend(), [&](const std::pair<int, Socket*> &pair) {
-        return pair.second == this;
-    });
-    if (iter != _efdSocketMap.cend()) {
-        _efdSocketMap.erase(iter);
+    const auto& iter = std::find_if(efdSocketMap_.cbegin(), efdSocketMap_.cend(),
+                                    [&](const std::pair<int, Socket*>& pair) {
+                                        return pair.second == this;
+                                    });
+    if (iter != efdSocketMap_.cend()) {
+        efdSocketMap_.erase(iter);
     } else {
         LOGE("no efd in socket:%p", this);
     }
 }
 
-Socket *Socket::getSocket(int efd) {
-    return _efdSocketMap.at(efd);
+Socket* Socket::getSocket(int efd) {
+    return efdSocketMap_.at(efd);
 }
 
-ssize_t Socket::write(int fd, const byte *data, size_t length) {
+ssize_t Socket::write(int fd, const byte* data, size_t length) {
     return sk_write_fd(fd, data, length);
+}
+
 }

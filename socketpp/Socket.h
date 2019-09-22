@@ -9,20 +9,22 @@
 #include "type.h"
 #include "log.h"
 
+namespace SocketPP {
+
 class Socket {
 public:
     virtual void onConnected(int fd) = 0;
 
     virtual void onDisconnected(int fd) = 0;
 
-    virtual void onReceive(int fd, const byte *buf, size_t len) = 0;
+    virtual void onReceive(int fd, const byte* buf, size_t len) = 0;
 
     virtual int loop() = 0;
 
 public:
-    inline void setPort(int port) { _port = port; };
+    inline void setPort(int port) { port_ = port; };
 
-    inline int getPort() const { return _port; }
+    inline int getPort() const { return port_; }
 
 public:
     virtual void onStart(int efd);
@@ -35,7 +37,7 @@ protected:
     virtual ~Socket();
 
 protected:
-    int _port;
+    int port_;
 
 public:
     /**
@@ -46,8 +48,10 @@ public:
      */
     static Socket* getSocket(int efd);
 
-    static ssize_t write(int fd, const byte *data, size_t length);
+    static ssize_t write(int fd, const byte* data, size_t length);
 
 private:
-    static std::map<int, Socket*> _efdSocketMap;
+    static std::map<int, Socket*> efdSocketMap_;
 };
+
+}

@@ -8,6 +8,8 @@
 
 #include "type.h"
 
+namespace SocketPP {
+
 class TCPStream {
 public:
     int fd;
@@ -15,7 +17,9 @@ public:
     // not explicit
     TCPStream(int fd = 0) : fd(fd) {}
 
-    bool operator==(const TCPStream &right) const;
+    bool operator==(const TCPStream& right) const;
 
-    ssize_t send(const byte *data, size_t length) const;
+    ssize_t send(const byte* data, size_t length) const;
 };
+
+}

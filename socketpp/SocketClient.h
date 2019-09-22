@@ -8,17 +8,21 @@
 
 #include "Socket.h"
 
+namespace SocketPP {
+
 class SocketClient : public Socket {
 public:
-    virtual int loop() override;
+    int loop() override;
 
 public:
     explicit SocketClient(std::string ip, int port);
 
-    inline void setIP(std::string ip) { _ip = std::move(ip); };
+    inline void setIP(std::string ip) { ip_ = std::move(ip); };
 
-    inline std::string getIP() const { return _ip; }
+    inline std::string getIP() const { return ip_; }
 
 protected:
-    std::string _ip;
+    std::string ip_;
 };
+
+}

@@ -13,11 +13,11 @@ extern "C" {
 
 #include "type.h"
 
-int sk_server_start_loop(int port, void *userdata);
+int sk_server_start_loop(int port, void* userdata);
 
-int sk_connect_and_loop(const char *host, int port, void *userdata);
+int sk_connect_and_loop(const char* host, int port, void* userdata);
 
-ssize_t sk_write_fd(int fd, const byte *data, size_t length);
+ssize_t sk_write_fd(int fd, const byte* data, size_t length);
 
 #ifdef __cplusplus
 }

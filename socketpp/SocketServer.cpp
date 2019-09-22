@@ -5,11 +5,15 @@
 #include "SocketServer.h"
 #include "socket_platform.h"
 
+namespace SocketPP {
+
 SocketServer::SocketServer(int port)
         : Socket(port) {
 }
 
 int SocketServer::loop() {
-    LOGD("socket=%p, port=%d", this, _port);
-    return sk_server_start_loop(_port, this);
+    LOGD("socket=%p, port=%d", this, port_);
+    return sk_server_start_loop(port_, this);
+}
+
 }

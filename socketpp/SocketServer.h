@@ -8,10 +8,14 @@
 #include "type.h"
 #include "log.h"
 
+namespace SocketPP {
+
 class SocketServer : public Socket {
 public:
-    virtual int loop() override;
+    int loop() override;
 
 public:
     explicit SocketServer(int port);
 };
+
+}

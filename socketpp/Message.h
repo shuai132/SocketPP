@@ -10,6 +10,8 @@
 #include "RawMsg.h"
 #include "TCPStream.h"
 
+namespace SocketPP {
+
 class Message {
 public:
     Message() = default;
@@ -26,7 +28,7 @@ public:
      * @param len
      * @return
      */
-    static Message create(TCPStream target, const byte *data, size_t len) {
+    static Message create(TCPStream target, const byte* data, size_t len) {
         return {target, RawMsg(data, len)};
     }
 
@@ -35,3 +37,5 @@ public:
 
     RawMsg rawMsg;
 };
+
+}

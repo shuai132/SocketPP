@@ -15,23 +15,23 @@ TCPClient::TCPClient(const std::string& ip, int port)
     startSendThread();
 }
 
-ssize_t TCPClient::send(const Message &message) {
-    if (!_connected) {
+ssize_t TCPClient::send(const Message& message) {
+    if (!connected_) {
         LOGE("not connected!");
         return SendResult::NotConnected;
     }
 
     LOGD("TCPClient::send: target=%d, len=%ld", message.target.fd, message.rawMsg.length());
 
-    if (_sendInterceptor) {
-        if (_sendInterceptor(message)) return SendResult::Intercepted;
+    if (sendInterceptor_) {
+        if (sendInterceptor_(message)) return SendResult::Intercepted;
     }
 
     onSend(message);
 
-    LOGD("try to send to stream:%d", _streamPeer.fd);
-    const auto &rawMsg = message.rawMsg;
-    ssize_t ret = _streamPeer.send(rawMsg.data(), rawMsg.length());
+    LOGD("try to send to stream:%d", streamPeer_.fd);
+    const auto& rawMsg = message.rawMsg;
+    ssize_t ret = streamPeer_.send(rawMsg.data(), rawMsg.length());
 
     if (ret == -1) {
         LOGE("send failed!");
@@ -42,52 +42,52 @@ ssize_t TCPClient::send(const Message &message) {
     return ret;
 }
 
-ssize_t TCPClient::send(const std::string &str) {
+ssize_t TCPClient::send(const std::string& str) {
     return send(Message(str));
 }
 
-void TCPClient::post(const Message &message) {
-    if (!_connected)
+void TCPClient::post(const Message& message) {
+    if (!connected_)
         return;
 
-    _msgQueueMutex.lock();
-    _msgQueue.push(message);
-    _msgQueueMutex.unlock();
-    _msgQueueCondition.notify_one();
+    msgQueueMutex_.lock();
+    msgQueue_.push(message);
+    msgQueueMutex_.unlock();
+    msgQueueCondition_.notify_one();
 }
 
-void TCPClient::post(const std::string &str) {
+void TCPClient::post(const std::string& str) {
     post(Message(str));
 }
 
 void TCPClient::flush() {
-    std::lock_guard<std::mutex> lock(_msgQueueMutex);
+    std::lock_guard<std::mutex> lock(msgQueueMutex_);
 
-    while (!_msgQueue.empty()) {
-        send(_msgQueue.front());
-        _msgQueue.pop();
+    while (!msgQueue_.empty()) {
+        send(msgQueue_.front());
+        msgQueue_.pop();
     }
 }
 
 void TCPClient::disconnect() {
-    onDisconnected(_streamPeer.fd);
+    onDisconnected(streamPeer_.fd);
 }
 
 void TCPClient::startSendThread() {
-    new std::thread([this]{
+    new std::thread([this] {
         LOGD("sendThread running...");
         Message msg;
 
         while (true) {
             {
-                std::unique_lock<std::mutex> lock(_msgQueueMutex);
-                LOGD("_msgQueue.size=%ld, _msgQueueCondition will %s", _msgQueue.size(),
-                     _msgQueue.empty() ? "waiting..." : "not wait!");
-                _msgQueueCondition.wait(lock, [this] { return !_msgQueue.empty(); });
-                LOGD("_msgQueueCondition wake! _msgQueue.size=%ld", _msgQueue.size());
+                std::unique_lock<std::mutex> lock(msgQueueMutex_);
+                LOGD("msgQueue_.size=%ld, msgQueueCondition_ will %s", msgQueue_.size(),
+                     msgQueue_.empty() ? "waiting..." : "not wait!");
+                msgQueueCondition_.wait(lock, [this] { return !msgQueue_.empty(); });
+                LOGD("msgQueueCondition_ wake! msgQueue_.size=%ld", msgQueue_.size());
 
-                msg = _msgQueue.front();
-                _msgQueue.pop();
+                msg = msgQueue_.front();
+                msgQueue_.pop();
             }
 
             send(msg);
@@ -95,54 +95,54 @@ void TCPClient::startSendThread() {
     });
 }
 
-void TCPClient::setSendInterceptor(const MessageInterceptor &interceptor) {
-    this->_sendInterceptor = interceptor;
+void TCPClient::setSendInterceptor(const MessageInterceptor& interceptor) {
+    this->sendInterceptor_ = interceptor;
 }
 
-void TCPClient::setSendHandle(const MessageHandle &handle) {
-    this->_sendHandle = handle;
+void TCPClient::setSendHandle(const MessageHandle& handle) {
+    this->sendHandle_ = handle;
 }
 
-void TCPClient::setRecvHandle(const MessageHandle &handle) {
-    this->_recvHandle = handle;
+void TCPClient::setRecvHandle(const MessageHandle& handle) {
+    this->recvHandle_ = handle;
 }
 
-void TCPClient::setConnHandle(const StreamHandle &handle) {
-    _connHandle = handle;
+void TCPClient::setConnHandle(const StreamHandle& handle) {
+    connHandle_ = handle;
 }
 
-void TCPClient::setDiscHandle(const StreamHandle &handle) {
-    _discHandle = handle;
+void TCPClient::setDiscHandle(const StreamHandle& handle) {
+    discHandle_ = handle;
 }
 
-void TCPClient::onSend(const Message &message) {
-    if (_sendHandle)
-        _sendHandle(message);
+void TCPClient::onSend(const Message& message) {
+    if (sendHandle_)
+        sendHandle_(message);
 }
 
 void TCPClient::onStart(int efd) {
     SocketClient::onStart(efd);
-    _connected = true;
+    connected_ = true;
 }
 
 void TCPClient::onConnected(int fd) {
-    _streamPeer = fd;
+    streamPeer_ = fd;
 
-    if (_connHandle)
-        _connHandle(_streamPeer);
+    if (connHandle_)
+        connHandle_(streamPeer_);
 }
 
 void TCPClient::onDisconnected(int fd) {
-    if (_discHandle)
-        _discHandle(fd);
+    if (discHandle_)
+        discHandle_(fd);
 }
 
-void TCPClient::onReceive(const Message &message) {
-    if (_recvHandle)
-        _recvHandle(message);
+void TCPClient::onReceive(const Message& message) {
+    if (recvHandle_)
+        recvHandle_(message);
 }
 
-void TCPClient::onReceive(int fd, const byte *buf, size_t len) {
+void TCPClient::onReceive(int fd, const byte* buf, size_t len) {
     TCPClient::onReceive(Message::create(fd, buf, len));
 }
 

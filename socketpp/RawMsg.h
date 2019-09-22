@@ -9,47 +9,49 @@
 
 #include "type.h"
 
+namespace SocketPP {
+
 struct RawMsg {
 private:
-    size_t _len = 0;
-    byte *_data = nullptr;
+    size_t len_ = 0;
+    byte* data_ = nullptr;
 
 public:
-    inline void initMsg(const byte *data = nullptr, size_t len = 0) {
+    inline void initMsg(const byte* data = nullptr, size_t len = 0) {
         if (data == nullptr || len == 0) {
-            _len  = 0;
-            _data = nullptr;
+            len_ = 0;
+            data_ = nullptr;
             return;
         }
 
-        _len  = len;
-        _data = new byte[len];
-        memcpy(_data, data, len);
+        len_ = len;
+        data_ = new byte[len];
+        memcpy(data_, data, len);
     }
 
     inline RawMsg& moveMsg(RawMsg& msg) {
         if (&msg == this)
             return *this;
 
-        _len  = msg._len;
+        len_ = msg.len_;
 
-        delete[] _data;
-        _data = msg._data;
-        msg._data = nullptr;
+        delete[] data_;
+        data_ = msg.data_;
+        msg.data_ = nullptr;
 
         return *this;
     }
 
-    explicit RawMsg(const byte *data = nullptr, size_t len = 0) {
+    explicit RawMsg(const byte* data = nullptr, size_t len = 0) {
         initMsg(data, len);
     }
 
     explicit RawMsg(const std::string& msg) {
-        initMsg((byte*)msg.data(), msg.length());
+        initMsg((byte*) msg.data(), msg.length());
     }
 
     RawMsg(const RawMsg& msg) {
-        initMsg(msg._data, msg._len);
+        initMsg(msg.data_, msg.len_);
     }
 
     RawMsg(RawMsg&& msg) noexcept {
@@ -60,8 +62,8 @@ public:
         if (&msg == this)
             return *this;
 
-        delete[] _data;
-        initMsg(msg._data, msg._len);
+        delete[] data_;
+        initMsg(msg.data_, msg.len_);
         return *this;
     }
 
@@ -69,19 +71,21 @@ public:
         return moveMsg(msg);
     }
 
-    byte *data() const {
-        return _data;
+    byte* data() const {
+        return data_;
     }
 
     size_t length() const {
-        return _len;
+        return len_;
     }
 
     std::string toString() const {
-        return std::string((char *) _data, 0, _len);
+        return std::string((char*) data_, 0, len_);
     }
 
     ~RawMsg() {
-        delete[] _data;
+        delete[] data_;
     }
 };
+
+}

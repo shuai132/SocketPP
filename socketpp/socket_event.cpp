@@ -6,6 +6,8 @@
 #include "Socket.h"
 #include "log.h"
 
+using namespace SocketPP;
+
 void sk_on_global_error() {
     LOGE("sk_on_global_error");
 }
@@ -14,9 +16,9 @@ void sk_on_error(int efd) {
     LOGE("sk_on_error:efd=%d", efd);
 }
 
-void sk_on_start(int efd, void *userdata) {
+void sk_on_start(int efd, void* userdata) {
     LOGD("sk_on_start:efd=%d", efd);
-    auto socket = static_cast<Socket *>(userdata);
+    auto socket = static_cast<Socket*>(userdata);
     socket->onStart(efd);
 }
 
@@ -45,7 +47,7 @@ void sk_on_disconnected(int efd, int fd) {
     Socket::getSocket(efd)->onDisconnected(fd);
 }
 
-void sk_on_read_data(int efd, int fd, byte *buf, int len) {
+void sk_on_read_data(int efd, int fd, byte* buf, int len) {
     LOGD("sk_on_read_data:efd=%d, fd=%d, len=%d", efd, fd, len);
     Socket::getSocket(efd)->onReceive(fd, buf, len);
 }

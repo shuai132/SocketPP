@@ -24,10 +24,12 @@ mkdir build && cd build && cmake .. && make
 ```cpp
 #include "SocketPP.h"
 
+using namespace SocketPP;
+
 int main() {
     const int port = 6000;
-    SocketPP::TCPServer server(port);
-    server.setRecvHandle([&] (const Message &message) {
+    TCPServer server(port);
+    server.setRecvHandle([&] (const Message& message) {
         server.send(message);
     });
     return server.loop();
@@ -40,16 +42,17 @@ nc localhost 6000
 or
 ```cpp
 #include "SocketPP.h"
-#include "log.h"
+
+using namespace SocketPP;
 
 int main() {
     const int port = 6000;
-    SocketPP::TCPClient client("127.0.0.1", port);
-    client.setConnHandle([&] (const TCPStream &stream) {
+    TCPClient client("127.0.0.1", port);
+    client.setConnHandle([&] (const TCPStream& stream) {
         client.send("hello");
     });
-    client.setRecvHandle([&] (const Message &message) {
-        LOGI("on receive: msg:%s", message.rawMsg.toString().c_str());
+    client.setRecvHandle([&] (const Message& message) {
+        printf("on receive: msg:%s", message.rawMsg.toString().c_str());
     });
     return client.loop();
 }

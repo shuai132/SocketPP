@@ -5,11 +5,15 @@
 #include "SocketClient.h"
 #include "socket_platform.h"
 
+namespace SocketPP {
+
 SocketClient::SocketClient(std::string ip, int port)
-        : Socket(port), _ip(std::move(ip)) {
+        : Socket(port), ip_(std::move(ip)) {
 }
 
 int SocketClient::loop() {
-    LOGD("socket=%p, port=%d", this, _port);
-    return sk_connect_and_loop(_ip.c_str(), _port, this);
+    LOGD("socket=%p, port=%d", this, port_);
+    return sk_connect_and_loop(ip_.c_str(), port_, this);
+}
+
 }
