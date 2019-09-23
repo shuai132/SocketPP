@@ -30,3 +30,5 @@ elseif(UNIX)
 endif()
 
 add_library(${PROJECT_NAME} ${SOCKET_PP_SRC} ${SOCKET_PF_SRC})
+
+target_include_directories(${PROJECT_NAME} PUBLIC .)

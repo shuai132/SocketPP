@@ -4,8 +4,6 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_compile_options(-Wall)
 
-include_directories(socketpp)
-
 # socketpp library
 add_subdirectory(socketpp)
 
