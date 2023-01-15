@@ -1,3 +1,5 @@
+## DEPRECATED. Please use [asio_net](https://github.com/shuai132/asio_net) instead
+
 # Socket++
 
 [![Build Status](https://www.travis-ci.org/shuai132/SocketPP.svg?branch=master)](https://www.travis-ci.org/shuai132/SocketPP)
